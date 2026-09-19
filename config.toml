@@ -1,0 +1,110 @@
+# ==============================================================================
+# Mailcheck Configuration
+# ==============================================================================
+
+[auth]
+# Enter your Azure App Registration (Client ID) here.
+client_id = "5ca24722-2bcf-472d-8cb7-6d4f2cc19200"
+# Microsoft OAuth authority: "common" for multitenant / personal accounts
+tenant = "common"
+
+[general]
+# Action to take when spam is detected:
+# "DryRun"     - Print what would be moved, but make no mailbox changes (SAFE DEFAULT)
+# "MoveToJunk" - Move detected messages to the "Junk Email" folder
+# "Delete"     - Permanently delete detected spam messages
+action = "DryRun"
+
+# Check interval in seconds when running in `mailcheck watch` mode
+watch_interval_seconds = 60
+
+# Max messages to inspect per scan cycle
+max_messages_per_scan = 50
+
+# Only scan unread messages
+only_unread = true
+
+# ==============================================================================
+# Spam Rules
+# ==============================================================================
+
+[rules]
+# Blocked Top-Level Domains (TLDs). Any sender address ending in these will trigger.
+blocked_tlds = [
+    ".xyz",
+    ".top",
+    ".icu",
+    ".buzz",
+    ".click",
+    ".shop",
+    ".cfd",
+    ".rest",
+    ".quest",
+    ".cam",
+    ".sbs",
+    ".monster",
+    ".cyou",
+    ".mom",
+    ".beauty",
+    ".skin"
+]
+
+# Blocked exact sender domains
+blocked_sender_domains = [
+    # "spam-domain.com"
+]
+
+# Words or patterns in Subject that immediately trigger spam
+blocked_subject_patterns = [
+    "(?i)invoice.*attached",
+    "(?i)your order.*confirmed.*#\\d{4,}",
+    "(?i)account suspension notice",
+    "(?i)urgent notification.*password expired",
+    "(?i)bitcoin.*wallet.*transfer"
+]
+
+# Header checks: looks into RFC822 internet headers
+# (e.g. Authentication-Results, Received-SPF, X-Spam)
+[[rules.header_rules]]
+name = "SPF Failure"
+header = "Authentication-Results"
+pattern = "(?i)spf=fail"
+
+[[rules.header_rules]]
+name = "DMARC Failure"
+header = "Authentication-Results"
+pattern = "(?i)dmarc=fail"
+
+# Display Name Spoofing:
+# Matches if the display name looks like a reputable brand,
+# but the sender's actual email domain is NOT in the allowed list.
+[[rules.spoof_rules]]
+brand_name = "Geek Squad"
+display_pattern = "(?i)geek[- ]?squad"
+allowed_domains = ["bestbuy.com", "geeksquad.com"]
+
+[[rules.spoof_rules]]
+brand_name = "McAfee"
+display_pattern = "(?i)mcafee"
+allowed_domains = ["mcafee.com"]
+
+[[rules.spoof_rules]]
+brand_name = "Norton"
+display_pattern = "(?i)norton"
+allowed_domains = ["norton.com", "geneseego.com", "lifelock.com"]
+
+[[rules.spoof_rules]]
+brand_name = "PayPal"
+display_pattern = "(?i)paypal"
+allowed_domains = ["paypal.com", "intl.paypal.com"]
+
+[[rules.spoof_rules]]
+brand_name = "Amazon"
+display_pattern = "(?i)amazon( customer service| order| support)?"
+allowed_domains = ["amazon.com", "amazon.co.uk", "amazon.ca"]
+
+# Recipient anomaly checks
+[rules.recipient_checks]
+# If true, flags emails where your email is not found in the To: or Cc: lists (mass BCC spam)
+flag_if_not_in_to_or_cc = false
+

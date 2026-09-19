@@ -1,0 +1,63 @@
+﻿{
+    "whitelisted_domains":  [
+                                "linkedin.com",
+                                "schwab.com",
+                                "costco.com",
+                                "discover.com",
+                                "farmers.com",
+                                "interactivebrokers.com",
+                                "robinhood.com",
+                                "apple.com",
+                                "appleid.com",
+                                "zillow.com",
+                                "glassdoor.com",
+                                "wsj.com"
+                            ],
+    "blocked_domains":  [
+                            "proxymity.io",
+                            "506investorgroup.com",
+                            "beehiiv.com",
+                            "mail.beehiiv.com",
+                            "threadloom.news",
+                            "vesta.threadloom.news",
+                            "digital.metamail.com",
+                            "av.vc",
+                            "privaterelay.appleid.com",
+                            "news.silvur.com",
+                            "substack.com",
+                            "pass.maltamarkets.com",
+                            "e.eyebuydirect.com",
+                            "digest.datacom.mw",
+                            "madisonseating.com",
+                            "itcontractorplus.com",
+                            "icloud.com",
+                            "h2-international-newsletter.com"
+                        ],
+    "blocked_tlds":  [
+                         ".xyz",
+                         ".top",
+                         ".icu",
+                         ".buzz",
+                         ".click",
+                         ".shop",
+                         ".cfd",
+                         ".rest",
+                         ".quest",
+                         ".cam",
+                         ".sbs",
+                         ".monster",
+                         ".cyou",
+                         ".mom",
+                         ".beauty",
+                         ".skin",
+                         ".link"
+                     ],
+    "blocked_subject_patterns":  [
+                                     "(?i)invoice.*attached",
+                                     "(?i)your order.*confirmed.*#\\d{4,}",
+                                     "(?i)account suspension notice",
+                                     "(?i)urgent notification.*password expired",
+                                     "(?i)bitcoin.*wallet.*transfer",
+                                     "(?i)renewal confirmation.*subscription"
+                                 ]
+}

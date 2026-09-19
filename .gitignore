@@ -1,0 +1,19 @@
+# Rust build artifacts
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# Local tokens & secrets
+*.token.json
+token.json
+.mailcheck_token.json
+
+# Logs & temp files
+*.log
+*.tmp
+
+# OS & Editor files
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
