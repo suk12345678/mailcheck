@@ -104,11 +104,67 @@ pub struct RecipientChecks {
     pub flag_if_not_in_to_or_cc: bool,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+struct RulesJsonOverride {
+    #[serde(default)]
+    whitelisted_domains: Vec<String>,
+    #[serde(default)]
+    blocked_domains: Vec<String>,
+    #[serde(default)]
+    blocked_tlds: Vec<String>,
+    #[serde(default)]
+    blocked_subject_patterns: Vec<String>,
+}
+
 impl AppConfig {
     pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<Self, Box<dyn std::error::Error>> {
-        let content = std::fs::read_to_string(path)?;
-        let config: AppConfig = toml::from_str(&content)?;
+        let content = std::fs::read_to_string(&path)?;
+        let mut config: AppConfig = toml::from_str(&content)?;
+
+        // 1. Check if rules are provided via MAILCHECK_RULES_BASE64 (robust against CLI escaping)
+        if let Ok(b64_env) = std::env::var("MAILCHECK_RULES_BASE64") {
+            use base64::engine::general_purpose::STANDARD;
+            use base64::Engine;
+            if let Ok(decoded) = STANDARD.decode(b64_env.trim()) {
+                if let Ok(rules_override) = serde_json::from_slice::<RulesJsonOverride>(&decoded) {
+                    config.apply_rules_override(rules_override);
+                    eprintln!("[Info] Loaded dynamic rules from MAILCHECK_RULES_BASE64 environment variable");
+                }
+            }
+        } else if let Ok(json_env) = std::env::var("MAILCHECK_RULES_JSON") {
+            if let Ok(rules_override) = serde_json::from_str::<RulesJsonOverride>(&json_env) {
+                config.apply_rules_override(rules_override);
+                eprintln!("[Info] Loaded dynamic rules from MAILCHECK_RULES_JSON environment variable");
+            }
+        } else {
+            // 2. Alternatively check for local rules.json in the same folder or working directory
+            let parent_dir = path.as_ref().parent().unwrap_or_else(|| Path::new("."));
+            let rules_json_path = parent_dir.join("rules.json");
+            if rules_json_path.exists() {
+                if let Ok(rules_content) = std::fs::read_to_string(&rules_json_path) {
+                    if let Ok(rules_override) = serde_json::from_str::<RulesJsonOverride>(&rules_content) {
+                        config.apply_rules_override(rules_override);
+                    }
+                }
+            }
+        }
+
         Ok(config)
+    }
+
+    fn apply_rules_override(&mut self, rules_override: RulesJsonOverride) {
+        if !rules_override.whitelisted_domains.is_empty() {
+            self.rules.whitelisted_domains = rules_override.whitelisted_domains;
+        }
+        if !rules_override.blocked_domains.is_empty() {
+            self.rules.blocked_sender_domains = rules_override.blocked_domains;
+        }
+        if !rules_override.blocked_tlds.is_empty() {
+            self.rules.blocked_tlds = rules_override.blocked_tlds;
+        }
+        if !rules_override.blocked_subject_patterns.is_empty() {
+            self.rules.blocked_subject_patterns = rules_override.blocked_subject_patterns;
+        }
     }
 
     pub fn find_config_path() -> PathBuf {
