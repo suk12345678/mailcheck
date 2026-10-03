@@ -276,11 +276,12 @@ function Save-Rules($rulesObj) {
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Blocked Domains Panel -->
-                    <Border Grid.Row="0" Grid.Column="0" Background="#252538" Padding="14" CornerRadius="6" Margin="0,0,8,0">
+                    <Border Grid.Row="0" Grid.Column="0" Background="#252538" Padding="14" CornerRadius="6" Margin="0,0,4,0">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -288,17 +289,25 @@ function Save-Rules($rulesObj) {
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             <TextBlock Text="Blocked Domains (Auto-Moved to Junk)" FontSize="15" FontWeight="Bold" Foreground="#F38BA8" Margin="0,0,0,10"/>
-                            <ListBox Name="ListBlockedDomains" Grid.Row="1" FontSize="14" Background="#1E1E2E" Foreground="#CDD6F4" BorderBrush="#313244"/>
+                            <ListBox Name="ListBlockedDomains" Grid.Row="1" SelectionMode="Extended" FontSize="14" Background="#1E1E2E" Foreground="#CDD6F4" BorderBrush="#313244"/>
                             <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
-                                <TextBox Name="TxtNewBlocked" Width="220" Height="34" FontSize="14" VerticalContentAlignment="Center" Margin="0,0,8,0"/>
-                                <Button Name="BtnAddBlocked" Content="Add" FontSize="13" Padding="12,6"/>
-                                <Button Name="BtnRemoveBlocked" Content="Remove Selected" FontSize="13" Padding="12,6"/>
+                                <TextBox Name="TxtNewBlocked" Width="180" Height="34" FontSize="14" VerticalContentAlignment="Center" Margin="0,0,6,0"/>
+                                <Button Name="BtnAddBlocked" Content="Add" FontSize="13" Padding="10,6"/>
+                                <Button Name="BtnRemoveBlocked" Content="Delete" FontSize="13" Padding="10,6"/>
                             </StackPanel>
                         </Grid>
                     </Border>
 
+                    <!-- Middle Transfer Controls -->
+                    <Border Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="8,0" Background="#1E1E2E" Padding="8,16" CornerRadius="8" BorderBrush="#313244" BorderThickness="1">
+                        <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                            <Button Name="BtnMoveToWhitelist" Content="Whitelist ➡️" Background="#A6E3A1" Foreground="#11111B" FontWeight="Bold" FontSize="13" Padding="14,10" Margin="0,0,0,14" ToolTip="Transfer selected domains from Blocked to Whitelist"/>
+                            <Button Name="BtnMoveToBlocked" Content="⬅️ Block" Background="#F38BA8" Foreground="#11111B" FontWeight="Bold" FontSize="13" Padding="14,10" ToolTip="Transfer selected domains from Whitelist to Blocked"/>
+                        </StackPanel>
+                    </Border>
+
                     <!-- Whitelisted Domains Panel -->
-                    <Border Grid.Row="0" Grid.Column="1" Background="#252538" Padding="14" CornerRadius="6" Margin="8,0,0,0">
+                    <Border Grid.Row="0" Grid.Column="2" Background="#252538" Padding="14" CornerRadius="6" Margin="4,0,0,0">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -306,17 +315,17 @@ function Save-Rules($rulesObj) {
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             <TextBlock Text="Whitelisted Domains (Safe / Protected)" FontSize="15" FontWeight="Bold" Foreground="#A6E3A1" Margin="0,0,0,10"/>
-                            <ListBox Name="ListWhitelistedDomains" Grid.Row="1" FontSize="14" Background="#1E1E2E" Foreground="#CDD6F4" BorderBrush="#313244"/>
+                            <ListBox Name="ListWhitelistedDomains" Grid.Row="1" SelectionMode="Extended" FontSize="14" Background="#1E1E2E" Foreground="#CDD6F4" BorderBrush="#313244"/>
                             <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
-                                <TextBox Name="TxtNewWhitelisted" Width="220" Height="34" FontSize="14" VerticalContentAlignment="Center" Margin="0,0,8,0"/>
-                                <Button Name="BtnAddWhitelisted" Content="Add" FontSize="13" Padding="12,6"/>
-                                <Button Name="BtnRemoveWhitelisted" Content="Remove Selected" FontSize="13" Padding="12,6"/>
+                                <TextBox Name="TxtNewWhitelisted" Width="180" Height="34" FontSize="14" VerticalContentAlignment="Center" Margin="0,0,6,0"/>
+                                <Button Name="BtnAddWhitelisted" Content="Add" FontSize="13" Padding="10,6"/>
+                                <Button Name="BtnRemoveWhitelisted" Content="Delete" FontSize="13" Padding="10,6"/>
                             </StackPanel>
                         </Grid>
                     </Border>
 
                     <!-- Cloud Sync Footer on Rules Tab -->
-                    <Border Grid.Row="1" Grid.ColumnSpan="2" Background="#252538" Padding="12,10" CornerRadius="6" Margin="0,10,0,0">
+                    <Border Grid.Row="1" Grid.ColumnSpan="3" Background="#252538" Padding="12,10" CornerRadius="6" Margin="0,10,0,0">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -439,6 +448,9 @@ $listBlockedDomains = $window.FindName("ListBlockedDomains")
 $txtNewBlocked = $window.FindName("TxtNewBlocked")
 $btnAddBlocked = $window.FindName("BtnAddBlocked")
 $btnRemoveBlocked = $window.FindName("BtnRemoveBlocked")
+
+$btnMoveToWhitelist = $window.FindName("BtnMoveToWhitelist")
+$btnMoveToBlocked = $window.FindName("BtnMoveToBlocked")
 
 $listWhitelistedDomains = $window.FindName("ListWhitelistedDomains")
 $txtNewWhitelisted = $window.FindName("TxtNewWhitelisted")
@@ -831,9 +843,23 @@ $btnAddBlocked.Add_Click({
 })
 
 $btnRemoveBlocked.Add_Click({
-    $sel = $listBlockedDomains.SelectedItem
-    if ($sel) {
-        $script:CurrentRules.blocked_domains = @($script:CurrentRules.blocked_domains | Where-Object { $_ -ne $sel })
+    $selected = @($listBlockedDomains.SelectedItems)
+    if ($selected.Count -gt 0) {
+        $script:CurrentRules.blocked_domains = @($script:CurrentRules.blocked_domains | Where-Object { $selected -notcontains $_ })
+        Save-Rules $script:CurrentRules
+        Init-RulesLists
+    }
+})
+
+$btnMoveToWhitelist.Add_Click({
+    $selected = @($listBlockedDomains.SelectedItems)
+    if ($selected.Count -gt 0) {
+        foreach ($dom in $selected) {
+            if (-not ($script:CurrentRules.whitelisted_domains -contains $dom)) {
+                $script:CurrentRules.whitelisted_domains += $dom
+            }
+        }
+        $script:CurrentRules.blocked_domains = @($script:CurrentRules.blocked_domains | Where-Object { $selected -notcontains $_ })
         Save-Rules $script:CurrentRules
         Init-RulesLists
     }
@@ -851,9 +877,23 @@ $btnAddWhitelisted.Add_Click({
 })
 
 $btnRemoveWhitelisted.Add_Click({
-    $sel = $listWhitelistedDomains.SelectedItem
-    if ($sel) {
-        $script:CurrentRules.whitelisted_domains = @($script:CurrentRules.whitelisted_domains | Where-Object { $_ -ne $sel })
+    $selected = @($listWhitelistedDomains.SelectedItems)
+    if ($selected.Count -gt 0) {
+        $script:CurrentRules.whitelisted_domains = @($script:CurrentRules.whitelisted_domains | Where-Object { $selected -notcontains $_ })
+        Save-Rules $script:CurrentRules
+        Init-RulesLists
+    }
+})
+
+$btnMoveToBlocked.Add_Click({
+    $selected = @($listWhitelistedDomains.SelectedItems)
+    if ($selected.Count -gt 0) {
+        foreach ($dom in $selected) {
+            if (-not ($script:CurrentRules.blocked_domains -contains $dom)) {
+                $script:CurrentRules.blocked_domains += $dom
+            }
+        }
+        $script:CurrentRules.whitelisted_domains = @($script:CurrentRules.whitelisted_domains | Where-Object { $selected -notcontains $_ })
         Save-Rules $script:CurrentRules
         Init-RulesLists
     }
