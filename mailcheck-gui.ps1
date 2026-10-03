@@ -301,8 +301,8 @@ function Save-Rules($rulesObj) {
                     <!-- Middle Transfer Controls -->
                     <Border Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="8,0" Background="#1E1E2E" Padding="8,16" CornerRadius="8" BorderBrush="#313244" BorderThickness="1">
                         <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
-                            <Button Name="BtnMoveToWhitelist" Content="Whitelist ➡️" Background="#A6E3A1" Foreground="#11111B" FontWeight="Bold" FontSize="13" Padding="14,10" Margin="0,0,0,14" ToolTip="Transfer selected domains from Blocked to Whitelist"/>
-                            <Button Name="BtnMoveToBlocked" Content="⬅️ Block" Background="#F38BA8" Foreground="#11111B" FontWeight="Bold" FontSize="13" Padding="14,10" ToolTip="Transfer selected domains from Whitelist to Blocked"/>
+                            <Button Name="BtnMoveToWhitelist" Content="Whitelist &gt;&gt;" Background="#A6E3A1" Foreground="#11111B" FontWeight="Bold" FontSize="13" Padding="14,10" Margin="0,0,0,14" ToolTip="Transfer selected domains from Blocked to Whitelist"/>
+                            <Button Name="BtnMoveToBlocked" Content="&lt;&lt; Block" Background="#F38BA8" Foreground="#11111B" FontWeight="Bold" FontSize="13" Padding="14,10" ToolTip="Transfer selected domains from Whitelist to Blocked"/>
                         </StackPanel>
                     </Border>
 
@@ -335,7 +335,7 @@ function Save-Rules($rulesObj) {
                                 <TextBlock Text="Azure Cloud Synchronization" FontSize="14" FontWeight="Bold" Foreground="#89B4FA"/>
                                 <TextBlock Text="Sync your local whitelist &amp; blocklist directly to your Azure Container App Job in 3 seconds." FontSize="12" Foreground="#A6ADC8" Margin="0,2,0,0"/>
                             </StackPanel>
-                            <Button Name="BtnSyncAzureRules" Grid.Column="1" Content="☁️ Sync Rules to Azure Cloud" Background="#89B4FA" Foreground="#11111B" FontWeight="Bold" FontSize="13" Padding="16,8"/>
+                            <Button Name="BtnSyncAzureRules" Grid.Column="1" Content="Sync Rules to Azure Cloud" Background="#89B4FA" Foreground="#11111B" FontWeight="Bold" FontSize="13" Padding="16,8"/>
                         </Grid>
                     </Border>
                 </Grid>
@@ -358,15 +358,15 @@ function Save-Rules($rulesObj) {
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Vertical">
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="●" Foreground="#A6E3A1" FontSize="18" Margin="0,0,8,0"/>
+                                    <Ellipse Width="10" Height="10" Fill="#A6E3A1" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                     <TextBlock Text="Azure Cloud Guardian (Active)" FontSize="18" FontWeight="Bold" Foreground="#A6E3A1"/>
                                 </StackPanel>
                                 <TextBlock Text="Job: job-mailcheck | Resource Group: rg-mailcheck (westus)" FontSize="13" Foreground="#CDD6F4" Margin="0,6,0,0"/>
                                 <TextBlock Text="Schedule: Automatically checks inbox every 5 minutes in background ($0.00 / Free tier)" FontSize="13" Foreground="#A6ADC8" Margin="0,2,0,0"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Button Name="BtnTriggerCloudScan" Content="⚡ Run Cloud Scan Now" Background="#A6E3A1" Foreground="#11111B" FontWeight="Bold" FontSize="14" Padding="14,8" Margin="0,0,8,0"/>
-                                <Button Name="BtnRefreshCloud" Content="🔄 Refresh Status" Background="#45475A" FontSize="14" Padding="14,8"/>
+                                <Button Name="BtnTriggerCloudScan" Content="Run Cloud Scan Now" Background="#A6E3A1" Foreground="#11111B" FontWeight="Bold" FontSize="14" Padding="14,8" Margin="0,0,8,0"/>
+                                <Button Name="BtnRefreshCloud" Content="Refresh Status" Background="#45475A" FontSize="14" Padding="14,8"/>
                             </StackPanel>
                         </Grid>
                     </Border>
