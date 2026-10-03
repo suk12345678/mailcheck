@@ -270,13 +270,17 @@ function Save-Rules($rulesObj) {
             <!-- TAB 2: Rules Editor -->
             <TabItem Header="Active Rules">
                 <Grid Margin="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Blocked Domains Panel -->
-                    <Border Grid.Column="0" Background="#252538" Padding="14" CornerRadius="6" Margin="0,0,8,0">
+                    <Border Grid.Row="0" Grid.Column="0" Background="#252538" Padding="14" CornerRadius="6" Margin="0,0,8,0">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -294,7 +298,7 @@ function Save-Rules($rulesObj) {
                     </Border>
 
                     <!-- Whitelisted Domains Panel -->
-                    <Border Grid.Column="1" Background="#252538" Padding="14" CornerRadius="6" Margin="8,0,0,0">
+                    <Border Grid.Row="0" Grid.Column="1" Background="#252538" Padding="14" CornerRadius="6" Margin="8,0,0,0">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -308,6 +312,90 @@ function Save-Rules($rulesObj) {
                                 <Button Name="BtnAddWhitelisted" Content="Add" FontSize="13" Padding="12,6"/>
                                 <Button Name="BtnRemoveWhitelisted" Content="Remove Selected" FontSize="13" Padding="12,6"/>
                             </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Cloud Sync Footer on Rules Tab -->
+                    <Border Grid.Row="1" Grid.ColumnSpan="2" Background="#252538" Padding="12,10" CornerRadius="6" Margin="0,10,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+                                <TextBlock Text="Azure Cloud Synchronization" FontSize="14" FontWeight="Bold" Foreground="#89B4FA"/>
+                                <TextBlock Text="Sync your local whitelist &amp; blocklist directly to your Azure Container App Job in 3 seconds." FontSize="12" Foreground="#A6ADC8" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <Button Name="BtnSyncAzureRules" Grid.Column="1" Content="☁️ Sync Rules to Azure Cloud" Background="#89B4FA" Foreground="#11111B" FontWeight="Bold" FontSize="13" Padding="16,8"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- TAB 3: Azure Cloud Guardian -->
+            <TabItem Header="Azure Cloud">
+                <Grid Margin="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Azure Status Header -->
+                    <Border Grid.Row="0" Background="#252538" Padding="16" CornerRadius="6" Margin="0,0,0,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Vertical">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="●" Foreground="#A6E3A1" FontSize="18" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Azure Cloud Guardian (Active)" FontSize="18" FontWeight="Bold" Foreground="#A6E3A1"/>
+                                </StackPanel>
+                                <TextBlock Text="Job: job-mailcheck | Resource Group: rg-mailcheck (westus)" FontSize="13" Foreground="#CDD6F4" Margin="0,6,0,0"/>
+                                <TextBlock Text="Schedule: Automatically checks inbox every 5 minutes in background ($0.00 / Free tier)" FontSize="13" Foreground="#A6ADC8" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Name="BtnTriggerCloudScan" Content="⚡ Run Cloud Scan Now" Background="#A6E3A1" Foreground="#11111B" FontWeight="Bold" FontSize="14" Padding="14,8" Margin="0,0,8,0"/>
+                                <Button Name="BtnRefreshCloud" Content="🔄 Refresh Status" Background="#45475A" FontSize="14" Padding="14,8"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Recent Executions Grid -->
+                    <Border Grid.Row="1" Background="#252538" Padding="12" CornerRadius="6">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Recent Cloud Executions (from Azure)" FontSize="15" FontWeight="Bold" Foreground="#89B4FA" Margin="0,0,0,8"/>
+                            <DataGrid Name="GridAzureExecutions" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Execution Name" Binding="{Binding Name}" Width="220"/>
+                                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="FontWeight" Value="Bold"/>
+                                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Succeeded">
+                                                        <Setter Property="Foreground" Value="#A6E3A1"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Running">
+                                                        <Setter Property="Foreground" Value="#89B4FA"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Failed">
+                                                        <Setter Property="Foreground" Value="#F38BA8"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Start Time (UTC)" Binding="{Binding StartTime}" Width="220"/>
+                                    <DataGridTextColumn Header="End Time (UTC)" Binding="{Binding EndTime}" Width="220"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
                         </Grid>
                     </Border>
                 </Grid>
@@ -356,6 +444,11 @@ $listWhitelistedDomains = $window.FindName("ListWhitelistedDomains")
 $txtNewWhitelisted = $window.FindName("TxtNewWhitelisted")
 $btnAddWhitelisted = $window.FindName("BtnAddWhitelisted")
 $btnRemoveWhitelisted = $window.FindName("BtnRemoveWhitelisted")
+
+$btnSyncAzureRules = $window.FindName("BtnSyncAzureRules")
+$btnTriggerCloudScan = $window.FindName("BtnTriggerCloudScan")
+$btnRefreshCloud = $window.FindName("BtnRefreshCloud")
+$gridAzureExecutions = $window.FindName("GridAzureExecutions")
 
 # Data Models
 $script:CurrentRules = Load-Rules
@@ -768,11 +861,86 @@ $btnRemoveWhitelisted.Add_Click({
 
 $btnRefresh.Add_Click({ Refresh-Inbox })
 
+# ==============================================================================
+# Azure Cloud Handlers
+# ==============================================================================
+function Get-AzCliCmd {
+    if (Get-Command az -ErrorAction SilentlyContinue) { return "az" }
+    $stdPath = "C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd"
+    if (Test-Path $stdPath) { return $stdPath }
+    return "az"
+}
+
+function Sync-RulesToAzure {
+    $azCmd = Get-AzCliCmd
+    $txtStatus.Text = "Syncing rules to Azure Container App Job..."
+    if ($btnSyncAzureRules) { $btnSyncAzureRules.IsEnabled = $false }
+
+    try {
+        $json = $script:CurrentRules | ConvertTo-Json -Depth 5 -Compress
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($json)
+        $b64 = [System.Convert]::ToBase64String($bytes)
+
+        $proc = Start-Process -FilePath $azCmd -ArgumentList "containerapp job update --name job-mailcheck --resource-group rg-mailcheck --set-env-vars ""MAILCHECK_RULES_BASE64=$b64""" -NoNewWindow -PassThru -Wait
+        if ($proc.ExitCode -eq 0) {
+            [System.Windows.MessageBox]::Show("Rules successfully synced to Azure Cloud!`n`nYour cloud guardian (job-mailcheck) will enforce these rules on its next scheduled scan.", "Azure Sync Successful", "OK", "Information")
+            $txtStatus.Text = "Azure rules synced successfully."
+        } else {
+            [System.Windows.MessageBox]::Show("Failed to sync rules to Azure (exit code $($proc.ExitCode)). Ensure you are logged into Azure CLI.", "Azure Sync Failed", "OK", "Warning")
+            $txtStatus.Text = "Azure sync returned exit code $($proc.ExitCode)"
+        }
+    } catch {
+        [System.Windows.MessageBox]::Show("Error syncing rules to Azure: $_", "Sync Error", "OK", "Error")
+        $txtStatus.Text = "Error syncing to Azure: $_"
+    } finally {
+        if ($btnSyncAzureRules) { $btnSyncAzureRules.IsEnabled = $true }
+    }
+}
+
+function Refresh-AzureStatus {
+    $azCmd = Get-AzCliCmd
+    $txtStatus.Text = "Fetching Azure Cloud executions..."
+    $window.Dispatcher.BeginInvoke([Action]{
+        try {
+            $jsonRaw = & $azCmd containerapp job execution list -n job-mailcheck -g rg-mailcheck --query "[].{Name:name, Status:properties.status, StartTime:properties.startTime, EndTime:properties.endTime}" -o json 2>$null
+            if ($jsonRaw) {
+                $execs = $jsonRaw | ConvertFrom-Json
+                $gridAzureExecutions.ItemsSource = $execs
+                $txtStatus.Text = "Azure Cloud status updated."
+            }
+        } catch {
+            $txtStatus.Text = "Could not fetch Azure executions."
+        }
+    }, [System.Windows.Threading.DispatcherPriority]::Background) | Out-Null
+}
+
+function Trigger-AzureCloudScan {
+    $azCmd = Get-AzCliCmd
+    $txtStatus.Text = "Triggering on-demand Azure scan..."
+    if ($btnTriggerCloudScan) { $btnTriggerCloudScan.IsEnabled = $false }
+
+    try {
+        & $azCmd containerapp job start -n job-mailcheck -g rg-mailcheck | Out-Null
+        [System.Windows.MessageBox]::Show("Cloud scan triggered in Azure!`nIt is running in the background.", "Scan Started", "OK", "Information")
+        Start-Sleep -Seconds 2
+        Refresh-AzureStatus
+    } catch {
+        [System.Windows.MessageBox]::Show("Failed to trigger Azure scan: $_", "Error", "OK", "Error")
+    } finally {
+        if ($btnTriggerCloudScan) { $btnTriggerCloudScan.IsEnabled = $true }
+    }
+}
+
+if ($btnSyncAzureRules) { $btnSyncAzureRules.Add_Click({ Sync-RulesToAzure }) }
+if ($btnTriggerCloudScan) { $btnTriggerCloudScan.Add_Click({ Trigger-AzureCloudScan }) }
+if ($btnRefreshCloud) { $btnRefreshCloud.Add_Click({ Refresh-AzureStatus }) }
+
 # Window Load
 $window.Add_Loaded({
     Init-RulesLists
     $window.Dispatcher.BeginInvoke([Action]{
         Refresh-Inbox
+        Refresh-AzureStatus
     }, [System.Windows.Threading.DispatcherPriority]::Background)
 })
 

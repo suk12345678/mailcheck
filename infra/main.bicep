@@ -19,6 +19,7 @@ param containerImage string = 'ghcr.io/suk12345678/mailcheck:latest'
 param cronSchedule string = '*/5 * * * *'
 
 @description('Target Hotmail / Outlook account email address')
+param accountEmail string = 'sukhpalsandhu1971@hotmail.com'
 param accountEmail string = 'sukhpal_sandhu@hotmail.com'
 
 @secure()
@@ -108,3 +109,4 @@ resource mailcheckJob 'Microsoft.App/jobs@2024-03-01' = {
 
 output jobName string = mailcheckJob.name
 output environmentName string = appEnv.name
+
