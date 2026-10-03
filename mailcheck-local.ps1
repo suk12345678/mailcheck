@@ -224,6 +224,7 @@ function Run-Scan {
     }
 
     $namespace = $outlook.GetNamespace("MAPI")
+    try { $namespace.Logon("", "", $false, $false) } catch {}
     $inbox = $namespace.GetDefaultFolder(6) # olFolderInbox
     $junkFolder = $namespace.GetDefaultFolder(23) # olFolderJunk
 

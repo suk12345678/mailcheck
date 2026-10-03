@@ -401,19 +401,40 @@ function Get-DomainClassification($domain, $senderAddress, $subject) {
     return "REVIEW"
 }
 
+function Get-OutlookSession {
+    if (-not $script:OutlookApp) {
+        try {
+            $script:OutlookApp = [System.Runtime.InteropServices.Marshal]::GetActiveObject("Outlook.Application")
+        } catch {
+            try {
+                $script:OutlookApp = New-Object -ComObject Outlook.Application
+            } catch {
+                Get-CimInstance Win32_Process -Filter "Name = 'OUTLOOK.EXE'" | Where-Object { $_.CommandLine -like "*-Embedding*" } | ForEach-Object {
+                    Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+                }
+                Start-Sleep -Milliseconds 500
+                $script:OutlookApp = New-Object -ComObject Outlook.Application
+            }
+        }
+    }
+    $ns = $script:OutlookApp.GetNamespace("MAPI")
+    try {
+        $ns.Logon("", "", $false, $false)
+    } catch {}
+    return $ns
+}
+
 function Refresh-Inbox {
     $txtStatus.Text = "Scanning Outlook Inbox..."
     $btnRefresh.IsEnabled = $false
 
     try {
-        if (-not $script:OutlookApp) {
-            $script:OutlookApp = New-Object -ComObject Outlook.Application
-        }
-        $ns = $script:OutlookApp.GetNamespace("MAPI")
+        $ns = Get-OutlookSession
         $inbox = $ns.GetDefaultFolder(6)
         $account = $ns.Accounts | Select-Object -First 1
         if ($account) {
-            $txtAccountInfo.Text = "Account: $($account.SmtpAddress) | Total Unread in Inbox: $($inbox.UnReadItemCount)"
+            $accName = if ($account.SmtpAddress) { $account.SmtpAddress } else { $account.DisplayName }
+            $txtAccountInfo.Text = "Account: $accName | Total Unread in Inbox: $($inbox.UnReadItemCount)"
         }
 
         $scanMax = 100
@@ -604,15 +625,19 @@ $btnMoveToJunk.Add_Click({
     $btnMoveToJunk.IsEnabled = $false
 
     try {
-        $outlook = New-Object -ComObject Outlook.Application
-        $ns = $outlook.GetNamespace("MAPI")
+        $ns = Get-OutlookSession
         $inbox = $ns.GetDefaultFolder(6)
         $junk = $ns.GetDefaultFolder(23)
 
         $items = $inbox.Items.Restrict("[UnRead] = True")
         $items.Sort("[ReceivedTime]", $true)
 
-        $scanMax = [int]$cmbScanCount.Text
+        $scanMax = 100
+        if ($cmbScanCount.SelectedItem -and $cmbScanCount.SelectedItem.Content) {
+            $scanMax = [int]$cmbScanCount.SelectedItem.Content
+        } elseif ($cmbScanCount.Text) {
+            $scanMax = [int]$cmbScanCount.Text
+        }
         $count = [Math]::Min($scanMax, $items.Count)
         $toMove = [System.Collections.Generic.List[object]]::new()
 
@@ -654,8 +679,7 @@ $btnRunSweep.Add_Click({
 
     $txtStatus.Text = "Running full sweep against inbox..."
     try {
-        $outlook = New-Object -ComObject Outlook.Application
-        $ns = $outlook.GetNamespace("MAPI")
+        $ns = Get-OutlookSession
         $inbox = $ns.GetDefaultFolder(6)
         $junk = $ns.GetDefaultFolder(23)
 
@@ -747,7 +771,9 @@ $btnRefresh.Add_Click({ Refresh-Inbox })
 # Window Load
 $window.Add_Loaded({
     Init-RulesLists
-    Refresh-Inbox
+    $window.Dispatcher.BeginInvoke([Action]{
+        Refresh-Inbox
+    }, [System.Windows.Threading.DispatcherPriority]::Background)
 })
 
 [void]$window.ShowDialog()

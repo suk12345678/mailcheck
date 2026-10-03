@@ -69,6 +69,8 @@ fn default_only_unread() -> bool {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RulesConfig {
     #[serde(default)]
+    pub whitelisted_domains: Vec<String>,
+    #[serde(default)]
     pub blocked_tlds: Vec<String>,
     #[serde(default)]
     pub blocked_sender_domains: Vec<String>,
@@ -110,18 +112,29 @@ impl AppConfig {
     }
 
     pub fn find_config_path() -> PathBuf {
-        // Look in current working directory first, then next to executable
+        // Look in current working directory first
         let local = PathBuf::from("config.toml");
         if local.exists() {
             return local;
         }
 
+        // Look next to executable and traverse up parent directories (e.g. target/release -> project root)
         if let Ok(exe_path) = std::env::current_exe() {
-            if let Some(parent) = exe_path.parent() {
-                let candidate = parent.join("config.toml");
+            let mut current = exe_path.parent();
+            while let Some(dir) = current {
+                let candidate = dir.join("config.toml");
                 if candidate.exists() {
                     return candidate;
                 }
+                current = dir.parent();
+            }
+        }
+
+        // Check user config directory (%APPDATA%/mailcheck/config.toml)
+        if let Some(proj_dirs) = directories::ProjectDirs::from("com", "mailcheck", "mailcheck") {
+            let candidate = proj_dirs.config_dir().join("config.toml");
+            if candidate.exists() {
+                return candidate;
             }
         }
 

@@ -20,6 +20,7 @@ pub struct TokenResponse {
     pub expires_in: Option<i64>,
     pub access_token: Option<String>,
     pub refresh_token: Option<String>,
+    pub id_token: Option<String>,
     pub error: Option<String>,
     pub error_description: Option<String>,
 }

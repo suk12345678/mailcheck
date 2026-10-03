@@ -2,6 +2,7 @@ mod auth;
 mod config;
 mod engine;
 mod graph;
+mod imap_client;
 mod models;
 
 use auth::AuthManager;
@@ -9,14 +10,14 @@ use clap::{Parser, Subcommand, ValueEnum};
 use colored::Colorize;
 use config::{AppConfig, FilterAction};
 use engine::RuleEngine;
-use graph::GraphClient;
+use imap_client::ImapClient;
 use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(
     name = "mailcheck",
-    version = "0.1.0",
-    about = "Fast, customizable spam filtering CLI for Hotmail / Outlook.com"
+    version = "0.2.0",
+    about = "Fast, standalone spam filtering CLI for Hotmail / Outlook.com using IMAP & XOAUTH2"
 )]
 struct Cli {
     /// Path to config file
@@ -29,9 +30,9 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Authenticate with your Microsoft / Hotmail account via Device Code Flow
+    /// Authenticate with your Microsoft / Hotmail account via browser sign-in
     Auth {
-        /// Microsoft Azure App Client ID (overrides config.toml)
+        /// Microsoft OAuth Client ID (optional override)
         #[arg(long)]
         client_id: Option<String>,
     },
@@ -112,25 +113,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .filter(|s| !s.trim().is_empty())
                 .unwrap_or_else(|| app_config.auth.client_id.clone());
 
-            if effective_client_id.trim().is_empty() {
-                eprintln!("\n{}", "=== Microsoft OAuth Client ID Needed ===".bold().red());
-                eprintln!("To connect to Hotmail / Outlook.com, Microsoft requires an Azure App Client ID.");
-                eprintln!("1. Go to: {}", "https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade".cyan().underline());
-                eprintln!("2. Click 'New registration'");
-                eprintln!("   - Name: Mailcheck");
-                eprintln!("   - Supported account types: 'Personal Microsoft accounts only'");
-                eprintln!("   - Under Authentication -> 'Allow public client flows' -> Yes");
-                eprintln!("3. Paste your Application (client) ID into config.toml or run:");
-                eprintln!("   {}\n", "mailcheck auth --client-id YOUR_CLIENT_ID_HERE".green().bold());
-                return Ok(());
-            }
-
             let auth = AuthManager::new(effective_client_id, app_config.auth.tenant);
-            auth.run_device_code_login().await?;
+            let token = auth.run_browser_login().await?;
+
+            if let Some(email) = token.account_email {
+                println!("\nTesting IMAP connection to outlook.office365.com...");
+                let test_res = tokio::task::spawn_blocking(move || {
+                    let client = ImapClient::new(email, token.access_token);
+                    client.test_connection()
+                })
+                .await?;
+
+                match test_res {
+                    Ok(info) => println!("{} {}", "IMAP Connection Verified:".bold().green(), info),
+                    Err(e) => eprintln!("{} {}", "Warning: Initial IMAP test reported:".yellow().bold(), e),
+                }
+            }
         }
 
         Commands::Rules => {
             println!("\n{}", "=== Active Spam Rules ===".bold().cyan());
+            println!("{}: {:?}", "Whitelisted Domains".bold().green(), app_config.rules.whitelisted_domains);
             println!("{}: {:?}", "Blocked TLDs".bold(), app_config.rules.blocked_tlds);
             println!("{}: {:?}", "Blocked Domains".bold(), app_config.rules.blocked_sender_domains);
             println!("{}: {:?}", "Blocked Subject Regex".bold(), app_config.rules.blocked_subject_patterns);
@@ -219,26 +222,33 @@ async fn run_scan(
     only_unread: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let auth = AuthManager::new(app_config.auth.client_id.clone(), app_config.auth.tenant.clone());
-    let token = auth.get_valid_access_token().await?;
-    let client = GraphClient::new(&token);
+    let (token, email) = auth.get_valid_token_and_email().await?;
 
-    // Fetch user profile to get own email for recipient checking
-    let user_profile = client.get_user_profile().await.ok();
-    let user_email = user_profile
-        .as_ref()
-        .and_then(|p| p.mail.as_deref().or(p.user_principal_name.as_deref()));
+    if email.is_empty() {
+        return Err("No account email stored. Please run 'mailcheck auth' to sign in.".into());
+    }
 
     println!(
         "\n{}",
         format!(
-            "--- Scanning Inbox (Mode: {}, Top: {}, Unread Only: {}) ---",
-            action, max_messages, only_unread
+            "--- Scanning Inbox [{}] (Mode: {}, Top: {}, Unread Only: {}) ---",
+            email, action, max_messages, only_unread
         )
         .bold()
         .cyan()
     );
 
-    let messages = client.list_inbox_messages(only_unread, max_messages).await?;
+    let client_email = email.clone();
+    let client_token = token.clone();
+
+    // Fetch messages over IMAP
+    let messages = tokio::task::spawn_blocking(move || {
+        let client = ImapClient::new(client_email, client_token);
+        client.list_inbox_messages(only_unread, max_messages)
+    })
+    .await?
+    .map_err(|e| -> Box<dyn std::error::Error> { e })?;
+
     let engine = RuleEngine::new(app_config.rules.clone())?;
 
     if messages.is_empty() {
@@ -249,7 +259,7 @@ async fn run_scan(
     let mut spam_count = 0;
     let mut clean_count = 0;
 
-    for msg in &messages {
+    for (uid, msg) in &messages {
         let sender_str = msg
             .from
             .as_ref()
@@ -264,11 +274,12 @@ async fn run_scan(
 
         let subject_str = msg.subject.as_deref().unwrap_or("(No Subject)");
 
-        let eval = engine.evaluate(msg, user_email);
+        let eval = engine.evaluate(msg, Some(&email));
 
         if eval.is_spam {
             spam_count += 1;
             println!("\n{}", "⚠️  SPAM DETECTED".red().bold());
+            println!("  UID:     {}", uid);
             println!("  From:    {}", sender_str.yellow());
             println!("  Subject: {}", subject_str.bold());
             if let Some(date) = msg.received_date_time {
@@ -281,18 +292,36 @@ async fn run_scan(
 
             match action {
                 FilterAction::DryRun => {
-                    println!("  Action:  {}", "[DRY RUN] Would move to Junk Email".bright_blue());
+                    println!("  Action:  {}", "[DRY RUN] Would move to Junk folder".bright_blue());
                 }
                 FilterAction::MoveToJunk => {
-                    print!("  Action:  Moving to Junk Email folder... ");
-                    match client.move_message(&msg.id, "junkemail").await {
+                    print!("  Action:  Moving to Junk folder... ");
+                    let move_email = email.clone();
+                    let move_token = token.clone();
+                    let target_uid = *uid;
+                    let res = tokio::task::spawn_blocking(move || {
+                        let client = ImapClient::new(move_email, move_token);
+                        client.move_message(target_uid)
+                    })
+                    .await?;
+
+                    match res {
                         Ok(_) => println!("{}", "Done".green().bold()),
                         Err(e) => println!("{} {}", "Failed:".red().bold(), e),
                     }
                 }
                 FilterAction::Delete => {
                     print!("  Action:  Permanently deleting message... ");
-                    match client.delete_message(&msg.id).await {
+                    let del_email = email.clone();
+                    let del_token = token.clone();
+                    let target_uid = *uid;
+                    let res = tokio::task::spawn_blocking(move || {
+                        let client = ImapClient::new(del_email, del_token);
+                        client.delete_message(target_uid)
+                    })
+                    .await?;
+
+                    match res {
                         Ok(_) => println!("{}", "Deleted".green().bold()),
                         Err(e) => println!("{} {}", "Failed:".red().bold(), e),
                     }

@@ -3,8 +3,8 @@
 # ==============================================================================
 
 [auth]
-# Enter your Azure App Registration (Client ID) here.
-client_id = "5ca24722-2bcf-472d-8cb7-6d4f2cc19200"
+# Dedicated Mailcheck Azure App Registration for Hotmail / Outlook personal accounts
+client_id = "b870d6a8-5d6b-4e94-be55-c4a8c58cdbb4"
 # Microsoft OAuth authority: "common" for multitenant / personal accounts
 tenant = "common"
 
@@ -29,6 +29,26 @@ only_unread = true
 # ==============================================================================
 
 [rules]
+# Safety Whitelist: These domains are NEVER flagged as spam regardless of headers/patterns
+whitelisted_domains = [
+    "linkedin.com",
+    "schwab.com",
+    "costco.com",
+    "discover.com",
+    "farmers.com",
+    "interactivebrokers.com",
+    "robinhood.com",
+    "apple.com",
+    "appleid.com",
+    "zillow.com",
+    "wsj.com",
+    "proxymity.io",
+    "icloud.com",
+    "webstreetproperties.com",
+    "amazon.com",
+    "news.goggles4u.com"
+]
+
 # Blocked Top-Level Domains (TLDs). Any sender address ending in these will trigger.
 blocked_tlds = [
     ".xyz",
@@ -46,12 +66,46 @@ blocked_tlds = [
     ".cyou",
     ".mom",
     ".beauty",
-    ".skin"
+    ".skin",
+    ".link"
 ]
 
 # Blocked exact sender domains
 blocked_sender_domains = [
-    # "spam-domain.com"
+    "beehiiv.com",
+    "threadloom.news",
+    "privaterelay.appleid.com",
+    "pass.maltamarkets.com",
+    "digest.datacom.mw",
+    "madisonseating.com",
+    "itcontractorplus.com",
+    "h2-international-newsletter.com",
+    "e.eyebuydirect.com",
+    "506investorgroup.com",
+    "speediance.com",
+    "hello.chamberlain.com",
+    "av.vc",
+    "mail.beehiiv.com",
+    "mail.instagram.com",
+    "steelseries.com",
+    "email.crowdstreet.com",
+    "vesta.threadloom.news",
+    "realvnc.com",
+    "msi.email",
+    "henrymayo.com",
+    "substack.com",
+    "passionflix.com",
+    "news.silvur.com",
+    "mail.zillow.com",
+    "mail.clickup.com",
+    "mg-d1.substack.com",
+    "augustafinancial.com",
+    "info.vercel.com",
+    "fatburger.com",
+    "email.credible.com",
+    "digital.metamail.com",
+    "glassdoor.com",
+    "mcarthurbs.net"
 ]
 
 # Words or patterns in Subject that immediately trigger spam

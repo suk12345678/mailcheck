@@ -65,6 +65,17 @@ impl RuleEngine {
 
         let sender_domain = sender_address.split('@').nth(1).unwrap_or("");
 
+        // 0. Safety Whitelist: If sender domain is whitelisted, never flag as spam
+        for white in &self.config.whitelisted_domains {
+            let w_clean = white.trim().to_lowercase();
+            if !w_clean.is_empty() && (sender_domain == w_clean || sender_domain.ends_with(&format!(".{}", w_clean))) {
+                return EvaluationResult {
+                    is_spam: false,
+                    reasons: Vec::new(),
+                };
+            }
+        }
+
         // 1. Check Blocked TLDs
         for tld in &self.config.blocked_tlds {
             let tld_clean = tld.trim().to_lowercase();
