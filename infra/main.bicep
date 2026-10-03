@@ -108,4 +108,3 @@ resource mailcheckJob 'Microsoft.App/jobs@2024-03-01' = {
 
 output jobName string = mailcheckJob.name
 output environmentName string = appEnv.name
-
