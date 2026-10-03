@@ -1,16 +1,9 @@
-mod auth;
-mod config;
-mod engine;
-mod graph;
-mod imap_client;
-mod models;
-
-use auth::AuthManager;
 use clap::{Parser, Subcommand, ValueEnum};
 use colored::Colorize;
-use config::{AppConfig, FilterAction};
-use engine::RuleEngine;
-use imap_client::ImapClient;
+use mailcheck::auth::AuthManager;
+use mailcheck::config::{AppConfig, FilterAction};
+use mailcheck::engine::RuleEngine;
+use mailcheck::imap_client::ImapClient;
 use std::path::PathBuf;
 
 #[derive(Parser)]

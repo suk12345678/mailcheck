@@ -4,11 +4,11 @@ WORKDIR /usr/src/mailcheck
 
 # Copy manifests to pre-cache dependencies
 COPY Cargo.toml Cargo.lock* ./
-RUN mkdir src && echo "fn main() {}" > src/main.rs && cargo build --release && rm -rf src
+RUN mkdir src && echo "pub fn lib() {}" > src/lib.rs && echo "fn main() {}" > src/main.rs && cargo build --release --no-default-features --bin mailcheck && rm -rf src
 
 # Copy real source code
 COPY src ./src
-RUN touch src/main.rs && cargo build --release
+RUN touch src/main.rs && cargo build --release --no-default-features --bin mailcheck
 
 # Stage 2: Runtime image using Debian slim (lightweight, secure)
 FROM debian:bookworm-slim

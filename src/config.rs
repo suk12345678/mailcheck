@@ -104,16 +104,48 @@ pub struct RecipientChecks {
     pub flag_if_not_in_to_or_cc: bool,
 }
 
-#[derive(Debug, Clone, Deserialize)]
-struct RulesJsonOverride {
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct RulesJsonFile {
     #[serde(default)]
-    whitelisted_domains: Vec<String>,
+    pub whitelisted_domains: Vec<String>,
     #[serde(default)]
-    blocked_domains: Vec<String>,
+    pub blocked_domains: Vec<String>,
     #[serde(default)]
-    blocked_tlds: Vec<String>,
+    pub blocked_tlds: Vec<String>,
     #[serde(default)]
-    blocked_subject_patterns: Vec<String>,
+    pub blocked_subject_patterns: Vec<String>,
+}
+
+impl RulesJsonFile {
+    pub fn load_default() -> Self {
+        let path = std::path::Path::new("rules.json");
+        if path.exists() {
+            if let Ok(content) = std::fs::read_to_string(path) {
+                if let Ok(val) = serde_json::from_str::<RulesJsonFile>(&content) {
+                    return val;
+                }
+            }
+        }
+        Self::default()
+    }
+
+    pub fn save_default(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let json_str = serde_json::to_string_pretty(self)?;
+        std::fs::write("rules.json", json_str)?;
+        Ok(())
+    }
+
+    pub fn to_rules_config(&self) -> RulesConfig {
+        RulesConfig {
+            whitelisted_domains: self.whitelisted_domains.clone(),
+            blocked_tlds: self.blocked_tlds.clone(),
+            blocked_sender_domains: self.blocked_domains.clone(),
+            blocked_subject_patterns: self.blocked_subject_patterns.clone(),
+            header_rules: Vec::new(),
+            spoof_rules: Vec::new(),
+            recipient_checks: RecipientChecks::default(),
+        }
+    }
 }
 
 impl AppConfig {
@@ -126,13 +158,13 @@ impl AppConfig {
             use base64::engine::general_purpose::STANDARD;
             use base64::Engine;
             if let Ok(decoded) = STANDARD.decode(b64_env.trim()) {
-                if let Ok(rules_override) = serde_json::from_slice::<RulesJsonOverride>(&decoded) {
+                if let Ok(rules_override) = serde_json::from_slice::<RulesJsonFile>(&decoded) {
                     config.apply_rules_override(rules_override);
                     eprintln!("[Info] Loaded dynamic rules from MAILCHECK_RULES_BASE64 environment variable");
                 }
             }
         } else if let Ok(json_env) = std::env::var("MAILCHECK_RULES_JSON") {
-            if let Ok(rules_override) = serde_json::from_str::<RulesJsonOverride>(&json_env) {
+            if let Ok(rules_override) = serde_json::from_str::<RulesJsonFile>(&json_env) {
                 config.apply_rules_override(rules_override);
                 eprintln!("[Info] Loaded dynamic rules from MAILCHECK_RULES_JSON environment variable");
             }
@@ -142,7 +174,7 @@ impl AppConfig {
             let rules_json_path = parent_dir.join("rules.json");
             if rules_json_path.exists() {
                 if let Ok(rules_content) = std::fs::read_to_string(&rules_json_path) {
-                    if let Ok(rules_override) = serde_json::from_str::<RulesJsonOverride>(&rules_content) {
+                    if let Ok(rules_override) = serde_json::from_str::<RulesJsonFile>(&rules_content) {
                         config.apply_rules_override(rules_override);
                     }
                 }
@@ -152,7 +184,7 @@ impl AppConfig {
         Ok(config)
     }
 
-    fn apply_rules_override(&mut self, rules_override: RulesJsonOverride) {
+    fn apply_rules_override(&mut self, rules_override: RulesJsonFile) {
         if !rules_override.whitelisted_domains.is_empty() {
             self.rules.whitelisted_domains = rules_override.whitelisted_domains;
         }

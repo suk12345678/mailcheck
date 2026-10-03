@@ -15,7 +15,9 @@
                                 "icloud.com",
                                 "webstreetproperties.com",
                                 "amazon.com",
-                                "news.goggles4u.com"
+                                "library.lacounty.gov",
+                                "ups.com",
+                                "m1.com"
                             ],
     "blocked_domains":  [
                             "beehiiv.com",
@@ -51,7 +53,8 @@
                             "email.credible.com",
                             "digital.metamail.com",
                             "glassdoor.com",
-                            "mcarthurbs.net"
+                            "mcarthurbs.net",
+                            "news.goggles4u.com"
                         ],
     "blocked_tlds":  [
                          ".xyz",

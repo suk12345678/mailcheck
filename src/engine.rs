@@ -176,6 +176,7 @@ mod tests {
 
     fn sample_config() -> RulesConfig {
         RulesConfig {
+            whitelisted_domains: vec!["safe.com".into()],
             blocked_tlds: vec![".xyz".into(), ".top".into()],
             blocked_sender_domains: vec!["spammer.com".into()],
             blocked_subject_patterns: vec!["(?i)invoice.*attached".into()],
